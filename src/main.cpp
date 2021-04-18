@@ -88,7 +88,7 @@ void loop()
     }
     else if (message.startsWith("record"))
     {
-      logFile = SD.open("log-" + message.substring(8) + ".txt", FILE_WRITE);
+      logFile = SD.open("log-" + message.substring(7) + ".txt", FILE_WRITE);
       registry.sendDataSchema(&logFile);
       if(logFile){
         registry.stream->addMessage("starting recording");
