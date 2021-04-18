@@ -19,6 +19,9 @@ void MPU9250DMP::readAccel()
 }
 void MPU9250DMP::begin()
 {
-    mpu.begin();
+    int status = mpu.begin();
     lastRead = micros();
+}
+void MPU9250DMP::calibrateGyro(){
+    mpu.calibrateGyro();
 }

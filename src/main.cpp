@@ -10,7 +10,7 @@
 FloatSensorValue pitch("pitch");
 FloatSensorValue bank("bank");
 FloatSensorValue speed("speed");
-Int16SensorValue heading("heading");
+FloatSensorValue heading("heading");
 FloatSensorValue altitude("altitude");
 Int32SensorValue time("time");
 SensorValue *basicValueList[] = {&pitch, &bank, &speed, &altitude, &heading, &time};
@@ -26,9 +26,9 @@ MPU9250DMP dmp = MPU9250DMP(customWire);
 
 // Initialize pressure sensor
 Adafruit_BMP280 bmp(&customWire);
-
+int counter = 0;
 // Define pins
-#define HC12 Serial3
+#define HC12 SerialUSB
 
 void setup()
 {
@@ -46,22 +46,35 @@ void setup()
 
 void loop()
 {
-  //read all sensors and write output to transfer messages
+  //read all sensors
   dmp.readAccel();
   dmp.readGyro();
-  dmp.updateReadables();
-  pitch.value = dmp.pitch;
-  bank.value = dmp.bank;
-  heading.value = dmp.yaw * 180 / PI;
-
-  altitude.value = bmp.readAltitude();
-
-  //write messages
-  basics.send(&HC12);
-  registry.stream->send(&HC12);
+  dmp.processRotations();
+  dmp.processAcceleration();
+  if (true||counter % 100 == 0)
+  {
+    // only send messages in 1% of the iterations
+    dmp.updateReadables();
+    pitch.value = dmp.pitch;
+    bank.value = dmp.bank;
+    heading.value = dmp.yaw * 180 / PI;
+    time.value = millis();
+    altitude.value = bmp.readAltitude();
+    basics.send(&HC12);
+  }
+  //read messages and respond to them
   registry.readDataInStream(&HC12);
   while (registry.stream->available())
   {
-    registry.stream->addMessage("revieved: " + registry.stream->readMessage());
+    String message = registry.stream->readMessage();
+    if (message == "calibrateGyro")
+    {
+      int result = dmp.mpu.calibrateGyro();
+      registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX_rads()) + "\t" + String(dmp.mpu.getGyroBiasY_rads()) + "\t" + String(dmp.mpu.getGyroBiasZ_rads()) + "), result: " + String(result));
+    }
+    registry.stream->addMessage("revieved: " + message);
   }
-}
+  registry.stream->send(&HC12);
+  delay(10);
+  counter++;
+} 

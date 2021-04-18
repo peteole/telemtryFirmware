@@ -10,7 +10,7 @@ class MPU9250DMP : public DMP
 {
 public:
     MPU9250 mpu;
-    MPU9250DMP(TwoWire medium = Wire) : mpu(medium, 0x68)
+    MPU9250DMP(TwoWire &medium = Wire) : mpu(medium, 0x68)
     {
     }
     void readGyro() override;
