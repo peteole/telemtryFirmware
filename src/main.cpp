@@ -5,7 +5,8 @@
 #include "dmp/MPU9250DMP.h"
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
-
+#include <SPI.h>
+#include <SD.h>
 // Initialize sensor values
 FloatSensorValue pitch("pitch");
 FloatSensorValue bank("bank");
@@ -15,7 +16,7 @@ FloatSensorValue altitude("altitude");
 Int32SensorValue time("time");
 SensorValue *basicValueList[] = {&pitch, &bank, &speed, &altitude, &heading, &time};
 SensorValueList package(basicValueList, 6);
-Message basics(&package, 17);
+Message basics(&package, 5);
 MessageRegistry registry;
 
 //initialize wire
@@ -27,9 +28,11 @@ MPU9250DMP dmp = MPU9250DMP(customWire);
 // Initialize pressure sensor
 Adafruit_BMP280 bmp(&customWire);
 int minIntervalMS = 200;
+
 // Define pins
-//#define HC12 SerialUSB
 HardwareSerial HC12(PA10, PA9);
+
+File logFile;
 void setup()
 {
   //Establish data connection first
@@ -39,9 +42,16 @@ void setup()
 
   //now initialize the sensors
   customWire.begin();
-  dmp.begin();
+  if (!dmp.begin())
+    registry.stream->addMessage("Error initializing mpu9250 sensor");
   if (!bmp.begin(0x76))
     registry.stream->addMessage("Error initializing bmp sensor");
+  SPI.setMISO(PB14);
+  SPI.setMOSI(PB15);
+  SPI.setSCLK(PB13);
+  SPI.setSSEL(PB12);
+  if (!SD.begin(PB12))
+    registry.stream->addMessage("Error initializing SD card");
 }
 
 void loop()
@@ -61,6 +71,10 @@ void loop()
     time.value = millis();
     altitude.value = bmp.readAltitude();
     basics.send(&HC12);
+    if (logFile)
+    {
+      basics.send(&logFile);
+    }
   }
   //read messages and respond to them
   registry.readDataInStream(&HC12);
@@ -72,7 +86,21 @@ void loop()
       int result = dmp.mpu.calibrateGyro();
       registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX_rads()) + "\t" + String(dmp.mpu.getGyroBiasY_rads()) + "\t" + String(dmp.mpu.getGyroBiasZ_rads()) + "), result: " + String(result));
     }
-    registry.stream->addMessage("revieved: " + message);
+    else if (message.startsWith("record"))
+    {
+      logFile = SD.open("log-" + message.substring(8) + ".txt", FILE_WRITE);
+      registry.sendDataSchema(&logFile);
+      if(logFile){
+        registry.stream->addMessage("starting recording");
+      }else{
+        registry.stream->addMessage("error starting recording");
+      }
+    }
+    else if (message == "stop")
+    {
+      logFile.close();
+    }
+    registry.stream->addMessage("recieved: " + message);
   }
   registry.stream->send(&HC12);
 }

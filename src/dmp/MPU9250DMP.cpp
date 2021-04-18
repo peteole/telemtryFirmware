@@ -17,10 +17,10 @@ void MPU9250DMP::readAccel()
     accel.y = mpu.getAccelY_mss();
     accel.z = mpu.getAccelZ_mss();
 }
-void MPU9250DMP::begin()
+int MPU9250DMP::begin()
 {
-    int status = mpu.begin();
     lastRead = micros();
+    return mpu.begin();
 }
 void MPU9250DMP::calibrateGyro(){
     mpu.calibrateGyro();

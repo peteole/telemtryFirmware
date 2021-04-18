@@ -16,7 +16,7 @@ public:
     void readGyro() override;
     void readAccel() override;
     // begin sensor reading
-    void begin();
+    int begin();
     void calibrateGyro();
 
 private:
