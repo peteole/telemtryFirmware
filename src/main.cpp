@@ -26,10 +26,10 @@ MPU9250DMP dmp = MPU9250DMP(customWire);
 
 // Initialize pressure sensor
 Adafruit_BMP280 bmp(&customWire);
-int counter = 0;
+int minIntervalMS = 200;
 // Define pins
-#define HC12 SerialUSB
-
+//#define HC12 SerialUSB
+HardwareSerial HC12(PA10, PA9);
 void setup()
 {
   //Establish data connection first
@@ -51,13 +51,13 @@ void loop()
   dmp.readGyro();
   dmp.processRotations();
   dmp.processAcceleration();
-  if (true||counter % 100 == 0)
+  if (time.value + minIntervalMS < millis())
   {
     // only send messages in 1% of the iterations
     dmp.updateReadables();
     pitch.value = dmp.pitch;
     bank.value = dmp.bank;
-    heading.value = dmp.yaw * 180 / PI;
+    heading.value = dmp.yaw;
     time.value = millis();
     altitude.value = bmp.readAltitude();
     basics.send(&HC12);
@@ -75,6 +75,4 @@ void loop()
     registry.stream->addMessage("revieved: " + message);
   }
   registry.stream->send(&HC12);
-  delay(10);
-  counter++;
-} 
+}
