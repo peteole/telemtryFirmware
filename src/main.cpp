@@ -83,16 +83,19 @@ void loop()
     String message = registry.stream->readMessage();
     if (message == "calibrateGyro")
     {
-      int result = dmp.mpu.calibrateGyro();
-      registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX_rads()) + "\t" + String(dmp.mpu.getGyroBiasY_rads()) + "\t" + String(dmp.mpu.getGyroBiasZ_rads()) + "), result: " + String(result));
+      dmp.calibrateGyro();
+      registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX_rads()) + "\t" + String(dmp.mpu.getGyroBiasY_rads()) + "\t" + String(dmp.mpu.getGyroBiasZ_rads()) + ")");
     }
     else if (message.startsWith("record"))
     {
       logFile = SD.open("log-" + message.substring(7) + ".txt", FILE_WRITE);
       registry.sendDataSchema(&logFile);
-      if(logFile){
+      if (logFile)
+      {
         registry.stream->addMessage("starting recording");
-      }else{
+      }
+      else
+      {
         registry.stream->addMessage("error starting recording");
       }
     }
