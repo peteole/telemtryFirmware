@@ -7,6 +7,7 @@
 #include <Adafruit_BMP280.h>
 #include <SPI.h>
 #include <SD.h>
+#include "blinking.h"
 // Initialize sensor values
 FloatSensorValue pitch("pitch");
 FloatSensorValue bank("bank");
@@ -20,7 +21,7 @@ Message basics(&package, 5);
 MessageRegistry registry;
 
 //initialize wire
-TwoWire customWire(PB9, PB8);
+TwoWire customWire(PB7,PB6);
 
 //initialize dmp
 MPU9250DMP dmp = MPU9250DMP(customWire);
@@ -30,7 +31,7 @@ Adafruit_BMP280 bmp(&customWire);
 int minIntervalMS = 200;
 
 // Define pins
-HardwareSerial HC12(PA10, PA9);
+HardwareSerial HC12(PA3, PA2);
 
 File logFile;
 void setup()
@@ -46,12 +47,13 @@ void setup()
     registry.stream->addMessage("Error initializing mpu9250 sensor");
   if (!bmp.begin(0x76))
     registry.stream->addMessage("Error initializing bmp sensor");
-  SPI.setMISO(PB14);
-  SPI.setMOSI(PB15);
-  SPI.setSCLK(PB13);
-  SPI.setSSEL(PB12);
-  if (!SD.begin(PB12))
-    registry.stream->addMessage("Error initializing SD card");
+  // SPI.setMISO(PB14);
+  // SPI.setMOSI(PB15);
+  // SPI.setSCLK(PB13);
+  // SPI.setSSEL(PB12);
+  // if (!SD.begin(PB12))
+  //   registry.stream->addMessage("Error initializing SD card");
+  dmp.translation={0, 0.7071, 0.7071, 0};
 }
 
 void loop()
@@ -103,7 +105,12 @@ void loop()
     {
       logFile.close();
     }
+    else if (message.startsWith("setLED "))
+    {
+      setLED(message.substring(7).toInt());
+    }
     registry.stream->addMessage("recieved: " + message);
   }
   registry.stream->send(&HC12);
+  updateBlinkStatus();
 }
