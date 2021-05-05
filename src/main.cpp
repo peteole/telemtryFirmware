@@ -41,6 +41,7 @@ void setup()
   registry.sendDataSchema(&HC12);
 
   //now initialize the sensors
+  customWire.setClock(100000);
   customWire.begin();
   if (!dmp.begin())
     registry.stream->addMessage("Error initializing mpu9250 sensor");
