@@ -23,7 +23,7 @@ MessageRegistry registry;
 TwoWire customWire(PB9, PB8);
 
 //initialize dmp
-MPU9250DMP dmp = MPU9250DMP(customWire);
+MPU9250DMP dmp = MPU9250DMP(&customWire);
 
 // Initialize pressure sensor
 Adafruit_BMP280 bmp(&customWire);
@@ -84,7 +84,7 @@ void loop()
     if (message == "calibrateGyro")
     {
       dmp.calibrateGyro();
-      registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX_rads()) + "\t" + String(dmp.mpu.getGyroBiasY_rads()) + "\t" + String(dmp.mpu.getGyroBiasZ_rads()) + ")");
+      registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX()) + "\t" + String(dmp.mpu.getGyroBiasY()) + "\t" + String(dmp.mpu.getGyroBiasZ()) + ")");
     }
     else if (message.startsWith("record"))
     {
