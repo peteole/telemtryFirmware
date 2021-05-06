@@ -20,7 +20,7 @@ Message basics(&package, 5);
 MessageRegistry registry;
 
 //initialize wire
-TwoWire customWire(PB9, PB8);
+#define customWire Wire
 
 //initialize dmp
 MPU9250DMP dmp = MPU9250DMP(customWire);
