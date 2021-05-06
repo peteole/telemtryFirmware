@@ -42,6 +42,7 @@ void setup()
 
   //now initialize the sensors
   customWire.begin();
+  delay(1000);
   if (!dmp.begin())
     registry.stream->addMessage("Error initializing mpu9250 sensor");
   if (!bmp.begin(0x76))
