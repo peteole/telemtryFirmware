@@ -19,6 +19,7 @@ void MPU9250DMP::readAccel()
 }
 int MPU9250DMP::begin()
 {
+    this->medium->begin();
     lastRead = micros();
     MPU9250Setting settings;
     return mpu.setup(0x68, settings, *(this->medium));
