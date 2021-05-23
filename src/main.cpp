@@ -2,7 +2,7 @@
 #include "DataSchema.h"
 #include "Message.h"
 #include "MessageRegistry.h"
-#include "dmp/MPU9250DMP.h"
+#include "dmp/MPU6050DMP.h"
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
 #include <TinyGPS++.h>
@@ -21,10 +21,10 @@ DoubleSensorValue lat("latitude");
 Int32SensorValue time("time");
 SensorValue *basicValueList[] = {&pitch, &bank, &speed, &altitude, &heading, &time};
 SensorValueList package(basicValueList, 6);
-SensorValue *gpsSensorValues[]={&lat,&lng,&time};
-SensorValueList gpsList(gpsSensorValues,3);
+SensorValue *gpsSensorValues[] = {&lat, &lng, &time};
+SensorValueList gpsList(gpsSensorValues, 3);
 Message basics(&package, 5);
-Message gpsMessage(&gpsList,6);
+Message gpsMessage(&gpsList, 6);
 MessageRegistry registry;
 
 //initialize wire
@@ -34,7 +34,7 @@ TinyGPSPlus gps;
 HardwareSerial gpsSerial(PA2, PA3);
 
 //initialize dmp
-MPU9250DMP dmp = MPU9250DMP(customWire);
+MPU6050DMP dmp(customWire);
 
 // Initialize pressure sensor
 Adafruit_BMP280 bmp(&customWire);
@@ -79,10 +79,10 @@ void loop()
   if (gps.location.isUpdated())
   {
     //send new gps location
-    lng.value=gps.location.lng();
-    lat.value=gps.location.lat();
-    speed.value=gps.speed.mps();
-    heading.value=gps.course.deg()*PI/180;
+    lng.value = gps.location.lng();
+    lat.value = gps.location.lat();
+    speed.value = gps.speed.mps();
+    heading.value = gps.course.deg() * PI / 180;
   }
   if (time.value + minIntervalMS < millis())
   {
@@ -107,7 +107,8 @@ void loop()
     if (message == "calibrateGyro")
     {
       dmp.calibrateGyro();
-      registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX_rads()) + "\t" + String(dmp.mpu.getGyroBiasY_rads()) + "\t" + String(dmp.mpu.getGyroBiasZ_rads()) + ")");
+      registry.stream->addMessage("Sorry, calibration not yet implemented for mpu6050");
+      //registry.stream->addMessage("calibrated gyro, new biases: (" + String(dmp.mpu.getGyroBiasX_rads()) + "\t" + String(dmp.mpu.getGyroBiasY_rads()) + "\t" + String(dmp.mpu.getGyroBiasZ_rads()) + ")");
     }
     else if (message.startsWith("record"))
     {
