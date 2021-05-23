@@ -5,6 +5,7 @@
 #include "dmp/MPU9250DMP.h"
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
+#include <TinyGPS++.h>
 #include <SPI.h>
 #include <SD.h>
 // Initialize sensor values
@@ -13,14 +14,24 @@ FloatSensorValue bank("bank");
 FloatSensorValue speed("speed");
 FloatSensorValue heading("heading");
 FloatSensorValue altitude("altitude");
+
+DoubleSensorValue lng("longitute");
+DoubleSensorValue lat("latitude");
+
 Int32SensorValue time("time");
 SensorValue *basicValueList[] = {&pitch, &bank, &speed, &altitude, &heading, &time};
 SensorValueList package(basicValueList, 6);
+SensorValue *gpsSensorValues[]={&lat,&lng,&time};
+SensorValueList gpsList(gpsSensorValues,3);
 Message basics(&package, 5);
+Message gpsMessage(&gpsList,6);
 MessageRegistry registry;
 
 //initialize wire
 TwoWire customWire(PB7, PB6);
+
+TinyGPSPlus gps;
+HardwareSerial gpsSerial(PB11, PB10);
 
 //initialize dmp
 MPU9250DMP dmp = MPU9250DMP(customWire);
@@ -38,9 +49,11 @@ void setup()
   //Establish data connection first
   HC12.begin(9600);
   registry.addMessage(&basics);
+  registry.addMessage(&gpsMessage);
   registry.sendDataSchema(&HC12);
 
   //now initialize the sensors
+  gpsSerial.begin(9600);
   customWire.begin();
   if (!dmp.begin())
     registry.stream->addMessage("Error initializing mpu9250 sensor");
@@ -61,9 +74,19 @@ void loop()
   dmp.readGyro();
   dmp.processRotations();
   dmp.processAcceleration();
+  for (int i = 0; i < 5 && gpsSerial.available(); i++)
+    gps.encode(gpsSerial.read());
+  if (gps.location.isUpdated())
+  {
+    //send new gps location
+    lng.value=gps.location.lng();
+    lat.value=gps.location.lat();
+    speed.value=gps.speed.mps();
+    heading.value=gps.course.deg()*PI/180;
+  }
   if (time.value + minIntervalMS < millis())
   {
-    // only send messages in 1% of the iterations
+    // only send messages every minIntervalMS
     dmp.updateReadables();
     pitch.value = dmp.pitch;
     bank.value = dmp.bank;
